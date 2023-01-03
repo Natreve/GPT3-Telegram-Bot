@@ -26,7 +26,7 @@ async function gtpRespond(text) {
 
 bot.command("start", (ctx) => {
   ctx.reply("🤖");
-  ctx.reply("Hello, Welcome to Codesby's OpenAI Telegram bot!");
+  ctx.reply("Hello, I'm CodesbyBot, a OpenAI Telegram bot!");
 });
 
 bot.on("message:text", async (ctx) => {
