@@ -35,24 +35,23 @@ async function responseToMessage(ctx) {
     const regex = new RegExp(`${me}`, "i");
     if (!regex.test(text)) return;
 
-    if (ctx.message?.reply_to_message) {
-      const from = ctx.message.reply_to_message.from;
-
-      if (from?.id === bot.botInfo.id) {
-        ctx.replyWithChatAction("typing", {
-          message_thread_id: ctx.message?.message_thread_id,
-        });
-        const contextQuery = `ChatGPT: ${ctx.message.reply_to_message.text}\nMe: ${ctx.message.text}\nChatGPT: `;
-
-        const response = await chatGPT(contextQuery);
-        return ctx.reply(response, {
-          reply_to_message_id: ctx.message?.message_id,
-          message_thread_id: ctx.message?.message_thread_id,
-        });
-      }
-    }
-
     if (ctx.message.is_topic_message) {
+      if (ctx.message?.reply_to_message) {
+        const from = ctx.message.reply_to_message.from;
+
+        if (from?.id === bot.botInfo.id) {
+          ctx.replyWithChatAction("typing", {
+            message_thread_id: ctx.message?.message_thread_id,
+          });
+          const contextQuery = `ChatGPT: ${ctx.message.reply_to_message.text}\nMe: ${ctx.message.text}\nChatGPT: `;
+
+          const response = await chatGPT(contextQuery);
+          return ctx.reply(response, {
+            reply_to_message_id: ctx.message?.message_id,
+            message_thread_id: ctx.message?.message_thread_id,
+          });
+        }
+      }
       ctx.replyWithChatAction("typing", {
         message_thread_id: ctx.msg.message_thread_id,
       });
