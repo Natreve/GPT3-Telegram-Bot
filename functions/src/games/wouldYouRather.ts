@@ -16,7 +16,6 @@ export default async function wouldYouRather() {
     poll.question = "Would you rather";
     poll.options = options.split(/\s+or\s+/);
 
-    console.log(poll);
     return poll;
   } catch (error) {
     console.log(error);

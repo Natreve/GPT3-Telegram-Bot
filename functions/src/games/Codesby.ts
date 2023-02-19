@@ -1,9 +1,9 @@
 import { Configuration, OpenAIApi } from "openai";
 import { Context, Filter } from "grammy";
-const config = new Configuration({ apiKey: process.env.OPENAI_API });
-const openai = new OpenAIApi(config);
 
 async function chatGPT(text: string) {
+  const config = new Configuration({ apiKey: process.env.OPENAI_API });
+  const openai = new OpenAIApi(config);
   const result = await openai.createCompletion({
     model: "text-davinci-003",
     prompt: text,
@@ -47,6 +47,8 @@ export const onMention = async (ctx: Filter<Context, "message::mention">) => {
         return;
     }
   } catch (error) {
+    console.log(error);
+
     switch (type) {
       case "group":
         ctx.reply("Something went wrong...", {

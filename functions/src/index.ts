@@ -6,21 +6,10 @@ import * as dotenv from "dotenv";
 import * as Codesby from "./games/Codesby.js";
 import * as randomQuestions from "./games/randomQuestions.js";
 import wouldYouRather from "./games/wouldYouRather.js";
-import {
-  Bot,
-  webhookCallback,
-  InlineKeyboard,
-  Context,
-  session,
-  SessionFlavor,
-} from "grammy";
-
-import {
-  type Conversation,
-  type ConversationFlavor,
-  conversations,
-  createConversation,
-} from "@grammyjs/conversations";
+import { Bot, webhookCallback, InlineKeyboard } from "grammy";
+import { Context, session, SessionFlavor } from "grammy";
+import { Conversation, ConversationFlavor } from "@grammyjs/conversations";
+import { conversations, createConversation } from "@grammyjs/conversations";
 dotenv.config();
 
 interface SessionData {
@@ -28,13 +17,16 @@ interface SessionData {
 }
 type MyContext = Context & ConversationFlavor & SessionFlavor<SessionData>;
 type MyConversation = Conversation<MyContext>;
-const serviceAccount = fs.readJSONSync("../service-account.json");
+
 const app = express();
 const bot = new Bot<MyContext>(process.env.TELEGRAM_BOT_API as string);
 
+const serviceAccount = fs.readJSONSync("../service-account.json");
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
+// const credential = admin.credential.applicationDefault();
+// admin.initializeApp({ credential });
 
 // Install session middleware, and define the initial session value.
 function initial(): SessionData {
@@ -44,10 +36,10 @@ function initial(): SessionData {
 async function anwserQuestion(convo: MyConversation, ctx: MyContext) {
   const group = ctx.session.group;
   if (group) {
-    await ctx.reply(`👀 What's your answer to the question?\\.`);
+    await ctx.reply(`👀 What's your answer to the question?`);
     const { message } = await convo.waitFor(":text");
 
-    await bot.api.sendMessage(group, `👀 Someone said\n${message}`);
+    await bot.api.sendMessage(group, `👀 Someone said\n${message?.text}`);
   }
 }
 bot.use(session({ initial }));
@@ -56,11 +48,14 @@ bot.use(createConversation(anwserQuestion));
 
 bot.api.setMyCommands([
   { command: "wouldyou", description: "Would you rather" },
+  { command: "question", description: "Random Question" },
 ]);
 bot.command("start", async (ctx) => {
   if (ctx.match) {
-    const [game, group] = ctx.match.split("-");
-    if (game === "questions") {
+    const [game, group] = ctx.match.split("_");
+    console.log(game, group);
+
+    if (game === "question") {
       ctx.session.group = group;
       await ctx.conversation.enter("anwserQuestion");
     }
@@ -77,7 +72,7 @@ bot.chatType(["group", "supergroup"]).command("question", async (ctx) => {
   const keyboard = new InlineKeyboard();
   keyboard.url(
     "🕵️‍♀️ Answer Question",
-    `https://t.me/CodesbyBot?start=question-${ctx.chat.id}`
+    `https://t.me/CodesbyBot?start=question_${ctx.chat.id}`
   );
   await ctx.reply(
     `👋 Hello there\\! Just a heads up, you can answer our question *anonymously*\\! 🕵️‍♀️💬`,
@@ -92,4 +87,5 @@ bot.chatType(["group", "supergroup"]).on("message::mention", Codesby.onMention);
 app.use(express.json());
 app.use(webhookCallback(bot));
 
+// bot.start();
 export const CodesbyGPT3Bot = functions.https.onRequest(app);
