@@ -47,8 +47,6 @@ export const onMention = async (ctx: Filter<Context, "message::mention">) => {
         return;
     }
   } catch (error) {
-    console.log(error);
-
     switch (type) {
       case "group":
         ctx.reply("Something went wrong...", {

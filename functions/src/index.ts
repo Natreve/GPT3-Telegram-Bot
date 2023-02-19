@@ -53,8 +53,6 @@ bot.api.setMyCommands([
 bot.command("start", async (ctx) => {
   if (ctx.match) {
     const [game, group] = ctx.match.split("_");
-    console.log(game, group);
-
     if (game === "question") {
       ctx.session.group = group;
       await ctx.conversation.enter("anwserQuestion");

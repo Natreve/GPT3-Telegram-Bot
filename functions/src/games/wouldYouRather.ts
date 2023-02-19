@@ -18,7 +18,6 @@ export default async function wouldYouRather() {
 
     return poll;
   } catch (error) {
-    console.log(error);
     throw new Error("Something went wrong getting the question");
   }
 }
