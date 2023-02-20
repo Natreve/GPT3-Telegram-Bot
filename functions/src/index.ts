@@ -1,7 +1,7 @@
 import admin from "firebase-admin";
 import functions from "firebase-functions";
 import express from "express";
-import fs from "fs-extra";
+// import fs from "fs-extra";
 import * as dotenv from "dotenv";
 import * as Codesby from "./games/Codesby.js";
 import * as randomQuestions from "./games/randomQuestions.js";
@@ -22,12 +22,12 @@ type MyConversation = Conversation<MyContext>;
 const app = express();
 const bot = new Bot<MyContext>(process.env.TELEGRAM_BOT_API as string);
 
-const serviceAccount = fs.readJSONSync("../service-account.json");
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
-// const credential = admin.credential.applicationDefault();
-// admin.initializeApp({ credential });
+// const serviceAccount = fs.readJSONSync("../service-account.json");
+// admin.initializeApp({
+//   credential: admin.credential.cert(serviceAccount),
+// });
+const credential = admin.credential.applicationDefault();
+admin.initializeApp({ credential });
 
 // Install session middleware, and define the initial session value.
 function initial(): SessionData {
