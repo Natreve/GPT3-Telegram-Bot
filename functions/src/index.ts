@@ -41,14 +41,10 @@ async function anwserQuestion(convo: MyConversation, ctx: MyContext) {
       const msg = ctx.session.msg;
       await ctx.reply(`👀 What's your answer to the question?`);
       const { message } = await convo.waitFor(":text");
-      await bot.api.sendMessage(
-        group,
-        `🕵️‍♀️ *${message?.text}*`,
-        {
-          reply_to_message_id: msg,
-          parse_mode: "MarkdownV2",
-        }
-      );
+      await bot.api.sendMessage(group, `🕵️‍♀️ *${message?.text}*`, {
+        reply_to_message_id: msg,
+        parse_mode: "MarkdownV2",
+      });
     }
   } catch (error) {
     console.log(error);
@@ -63,15 +59,17 @@ bot.api.setMyCommands([
   { command: "question", description: "Random Question" },
 ]);
 bot.command("start", async (ctx) => {
-  if (ctx.match) {
-    const [game, group, msg] = ctx.match.split("_");
-    if (game === "question" && ctx.session) {
-      ctx.session.group = group;
-      ctx.session.msg = parseInt(msg);
-      await ctx.conversation.enter("anwserQuestion");
+  try {
+    if (ctx.match) {
+      const [game, group, msg] = ctx.match.split("_");
+      if (game === "question" && ctx.session) {
+        ctx.session.group = group;
+        ctx.session.msg = parseInt(msg);
+        await ctx.conversation.enter("anwserQuestion");
+      }
+      return;
     }
-    return;
-  }
+  } catch (error) {}
 });
 bot.chatType(["group", "supergroup"]).command("wouldyou", async (ctx) => {
   try {
@@ -91,10 +89,6 @@ bot.chatType(["group", "supergroup"]).command("question", async (ctx) => {
     "🕵️‍♀️ Anonymous Answer",
     `https://t.me/CodesbyBot?start=question_${ctx.chat.id}_${ctx2.message_id}`
   );
-  // await ctx.reply(
-  //   `👋 Hello there\\! Just a heads up, you can answer our question *anonymously*\\! 🕵️‍♀️💬`,
-  //   { parse_mode: "MarkdownV2" }
-  // );
 
   await ctx.reply(`You can answer this question *anonymously*\\! 🕵️‍♀️💬`, {
     reply_markup: keyboard,
@@ -109,5 +103,5 @@ bot.chatType(["group", "supergroup"]).on("message::mention", Codesby.onMention);
 app.use(express.json());
 app.use(webhookCallback(bot));
 
-bot.start();
+// bot.start();
 export const CodesbyGPT3Bot = functions.https.onRequest(app);
