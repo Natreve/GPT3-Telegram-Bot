@@ -47,7 +47,7 @@ async function anwserQuestion(convo: MyConversation, ctx: MyContext) {
       });
     }
   } catch (error) {
-    console.log(error);
+    console.log("error occured on anwserQuestion", error);
   }
 }
 bot.use(session({ initial }));
@@ -69,7 +69,9 @@ bot.command("start", async (ctx) => {
       }
       return;
     }
-  } catch (error) {}
+  } catch (error) {
+    console.log("error occured on start commands", error);
+  }
 });
 bot.chatType(["group", "supergroup"]).command("wouldyou", async (ctx) => {
   try {
