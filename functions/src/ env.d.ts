@@ -3,5 +3,7 @@ declare namespace NodeJS {
     readonly OPENAI_API: string;
     readonly TELEGRAM_BOT_API: string;
     readonly RAPID_API: string;
+    readonly DQ: string;
+    readonly AG: string;
   }
 }

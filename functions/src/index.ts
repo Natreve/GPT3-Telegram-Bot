@@ -13,8 +13,7 @@ import { conversations, createConversation } from "@grammyjs/conversations";
 dotenv.config();
 
 interface SessionData {
-  group: string | null;
-  msg: number | undefined;
+  id: string | null;
 }
 type MyContext = Context & ConversationFlavor & SessionFlavor<SessionData>;
 type MyConversation = Conversation<MyContext>;
@@ -31,25 +30,49 @@ admin.initializeApp({ credential });
 
 // Install session middleware, and define the initial session value.
 function initial(): SessionData {
-  return { group: null, msg: undefined };
+  return { id: null };
 }
 
 async function anwserQuestion(convo: MyConversation, ctx: MyContext) {
-  try {
-    if (ctx.session && ctx.session.group) {
-      const group = ctx.session.group;
-      const msg = ctx.session.msg;
-      await ctx.reply(`👀 What's your answer to the question?`);
-      const { message } = await convo.waitFor(":text");
-      await bot.api.sendMessage(group, `🕵️‍♀️ *${message?.text}*`, {
-        reply_to_message_id: msg,
-        parse_mode: "MarkdownV2",
-      });
-    }
-  } catch (error) {
-    console.log("error occured on anwserQuestion", error);
-  }
+  const { id } = convo.session;
+  if (!id) return;
+  const response = await convo.external(async () => {
+    const firestore = admin.firestore();
+    const db = firestore.collection("questionAsked");
+
+    const snapshot = await db.doc(id).get();
+
+    if (!snapshot.exists) return null;
+
+    return snapshot.data();
+  });
+  if (!response) return;
+  await ctx.reply(
+    `👀 What's your answer to the question: \\\n*${response.question}\\?*`,
+    { parse_mode: "MarkdownV2" }
+  );
+  const { message } = await convo.waitFor(":text");
+
+  await bot.api.sendMessage(response.chat_id, `🕵️‍♀️ *${message?.text}*`, {
+    parse_mode: "MarkdownV2",
+    reply_to_message_id: response.msg_id,
+  });
+  return;
 }
+
+bot.chatType(["group", "supergroup"]).command("wouldyou", async (ctx) => {
+  const { question, options } = await wouldYouRather();
+
+  await bot.api.sendPoll(ctx.chat.id, question, options, {
+    message_thread_id: ctx.message.message_thread_id,
+  });
+  return;
+});
+bot.on(["poll", "poll_answer"], (ctx) => {
+  //do nothing just handle poll error
+  return;
+});
+
 bot.use(session({ initial }));
 bot.use(conversations());
 bot.use(createConversation(anwserQuestion));
@@ -59,45 +82,59 @@ bot.api.setMyCommands([
   { command: "question", description: "Random Question" },
 ]);
 bot.command("start", async (ctx) => {
-  try {
-    if (ctx.match) {
-      const [game, group, msg] = ctx.match.split("_");
-      if (game === "question" && ctx.session) {
-        ctx.session.group = group;
-        ctx.session.msg = parseInt(msg);
+  if (ctx.match) {
+    const [game, id] = ctx.match.split("_");
+
+    switch (game) {
+      case "question":
+        ctx.session.id = id;
         await ctx.conversation.enter("anwserQuestion");
-      }
-      return;
+        break;
+
+      default:
+        break;
     }
-  } catch (error) {
-    console.log("error occured on start commands", error);
-  }
-});
-bot.chatType(["group", "supergroup"]).command("wouldyou", async (ctx) => {
-  try {
-    const { question, options } = await wouldYouRather();
-    await bot.api.sendPoll(ctx.chat.id, question, options);
     return;
-  } catch (error) {
-    console.log(error);
   }
+
+  // if (ctx.session.question) {
+  //   await ctx.conversation.enter("anwserQuestion");
+  // }
+  return;
 });
+
 bot.chatType(["group", "supergroup"]).command("question", async (ctx) => {
+  const firestore = admin.firestore();
+  const db = firestore.collection("questionAsked");
+  const doc = db.doc();
   const question = await randomQuestions.getRandom();
   const keyboard = new InlineKeyboard();
-  const ctx2 = await ctx.reply(question);
 
   keyboard.url(
     "🕵️‍♀️ Anonymous Answer",
-    `https://t.me/CodesbyBot?start=question_${ctx.chat.id}_${ctx2.message_id}`
+    `https://t.me/CodesbyBot?start=question_${doc.id}`
   );
-
-  await ctx.reply(`You can answer this question *anonymously*\\! 🕵️‍♀️💬`, {
+  const questionCtx = await ctx.reply(`*${question}*`, {
     reply_markup: keyboard,
+    message_thread_id: ctx.message.message_thread_id,
     parse_mode: "MarkdownV2",
-    reply_to_message_id: ctx2.message_id,
   });
+  await db.doc(doc.id).set({
+    question,
+    chat_id: ctx.chat.id,
+    msg_id: questionCtx.message_id,
+  });
+
   return;
+});
+
+const pm = bot.filter((ctx) => ctx.chat?.type === "private");
+pm.on("message:text", async (ctx) => {
+  const allow = [parseInt(process.env.DQ), parseInt(process.env.AG)];
+  const { from, text } = ctx.message;
+  if (!allow.includes(from.id)) return;
+  const response = await Codesby.chatGPT(text);
+  return await ctx.reply(response);
 });
 
 bot.chatType(["group", "supergroup"]).on("message::mention", Codesby.onMention);
@@ -106,4 +143,9 @@ app.use(express.json());
 app.use(webhookCallback(bot));
 
 // bot.start();
+// bot.catch((err) => {
+//   console.log(err);
+
+//   return;
+// });
 export const CodesbyGPT3Bot = functions.https.onRequest(app);
