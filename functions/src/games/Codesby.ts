@@ -2,24 +2,30 @@ import { Configuration, OpenAIApi } from "openai";
 import { Context, Filter } from "grammy";
 
 export async function chatGPT(text: string) {
-  const config = new Configuration({ apiKey: process.env.OPENAI_API });
-  const openai = new OpenAIApi(config);
-  const result = await openai.createCompletion({
-    model: "text-davinci-003",
-    prompt: text,
-    temperature: 0,
-    max_tokens: 1000,
-  });
-  return result.data.choices[0].text || "";
+  try {
+    const config = new Configuration({ apiKey: process.env.OPENAI_API });
+    const openai = new OpenAIApi(config);
+    const result = await openai.createCompletion({
+      model: "text-davinci-003",
+      prompt: text,
+      temperature: 0,
+      max_tokens: 1000,
+    });
+    return result.data.choices[0].text || "";
+  } catch (error) {
+    console.log(error);
+
+    throw new Error("Something went wrong");
+  }
 }
 
 export const onMention = async (ctx: Filter<Context, "message::mention">) => {
   const type = ctx.chat.type;
-  const bot = await ctx.api.getMe();
-  const me = `@${bot.username}`;
-  const regex = new RegExp(`${me}`, "i");
-  const text = ctx.message?.text || "";
   try {
+    const bot = await ctx.api.getMe();
+    const me = `@${bot.username}`;
+    const regex = new RegExp(`${me}`, "i");
+    const text = ctx.message?.text || "";
     switch (type) {
       case "group": {
         if (regex.test(text)) {
