@@ -77,10 +77,13 @@ bot.use(session({ initial }));
 bot.use(conversations());
 bot.use(createConversation(anwserQuestion));
 
-bot.api.setMyCommands([
-  { command: "wouldyou", description: "Would you rather" },
-  { command: "question", description: "Random Question" },
-]);
+bot.api.setMyCommands(
+  [
+    { command: "wouldyou", description: "Would you rather" },
+    { command: "question", description: "Random Question" },
+  ],
+  { scope: { type: "all_group_chats" } }
+);
 bot.command("start", async (ctx) => {
   if (ctx.match) {
     const [game, id] = ctx.match.split("_");
