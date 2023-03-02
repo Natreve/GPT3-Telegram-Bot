@@ -6,7 +6,7 @@ export async function chatGPT(text: string) {
     const config = new Configuration({ apiKey: process.env.OPENAI_API });
     const openai = new OpenAIApi(config);
     const result = await openai.createCompletion({
-      model: "text-davinci-003",
+      model: "gpt-3.5-turbo",
       prompt: text,
       temperature: 0,
       max_tokens: 1000,
