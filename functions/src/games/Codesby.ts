@@ -5,13 +5,19 @@ export async function chatGPT(text: string) {
   try {
     const config = new Configuration({ apiKey: process.env.OPENAI_API });
     const openai = new OpenAIApi(config);
-    const result = await openai.createCompletion({
+    const completion = await openai.createChatCompletion({
       model: "gpt-3.5-turbo",
-      prompt: text,
       temperature: 0,
       max_tokens: 1000,
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful AI named Codesby Created by Andrew Gray.",
+        },
+        { role: "user", content: text },
+      ],
     });
-    return result.data.choices[0].text || "";
+    return completion.data.choices[0].message?.content || "";
   } catch (error) {
     console.log(error);
 
